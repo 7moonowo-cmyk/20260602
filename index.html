@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>殺死蟑螂</title>
+    <style>
+      body, html {
+        margin: 0; padding: 0; width: 100%; height: 100%;
+        overflow: hidden; background-color: #e0e0e0;
+        font-family: "Microsoft JhengHei", sans-serif;
+      }
+      #ui-layer {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        display: flex; flex-direction: column; justify-content: center;
+        align-items: center; z-index: 10; background: rgba(255, 255, 255, 0.7);
+        background-image: url('2.png'); background-size: cover; background-position: center;
+      }
+      h1 { font-size: 56px; color: #5d4037; margin-bottom: 5px; text-shadow: 2px 2px 4px rgba(255,255,255,0.8); }
+      h2 { color: #d32f2f; margin: 5px 0; text-shadow: 1px 1px 2px white; }
+      h3 { color: #795548; margin-bottom: 20px; }
+      #start-btn {
+        padding: 12px 30px; font-size: 24px; cursor: pointer;
+        background-color: #1976D2; color: white; border: none; border-radius: 8px;
+      }
+      #info-bar {
+        position: absolute; top: 20px; left: 20px; font-size: 22px;
+        font-weight: bold; color: #333; display: none; z-index: 5; line-height: 1.4;
+      }
+      #tutorial-layer {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        display: none; flex-direction: column; justify-content: center;
+        align-items: center; z-index: 15; background: rgba(240, 240, 240, 0.95);
+        text-align: center; color: #333;
+      }
+      .tut-list {
+        text-align: left; list-style: none; padding: 0; margin: 20px 0;
+        font-size: 20px; line-height: 1.8; font-weight: bold;
+      }
+      .tut-list li { margin-bottom: 10px; }
+      #tutorial-start-btn {
+        padding: 12px 35px; font-size: 24px; cursor: pointer;
+        background-color: #d32f2f; color: white; border: none; border-radius: 8px;
+        display: none; animation: fadeIn 0.5s;
+      }
+      @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+      #buff-layer {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        display: none; flex-direction: column; justify-content: center;
+        align-items: center; z-index: 30; background: rgba(0, 0, 0, 0.6);
+        color: white; text-align: center;
+      }
+      #buff-layer h1 { color: #ffeb3b; margin-bottom: 0; }
+      #buff-layer p { margin: 5px 0 20px 0; font-size: 20px; line-height: 1.2; }
+      .buff-container { display: flex; gap: 20px; }
+      .buff-btn {
+        width: 200px; padding: 20px; border-radius: 12px; border: 3px solid #fff;
+        cursor: pointer; transition: transform 0.2s; color: white; font-weight: bold;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+      }
+      .buff-btn:hover { transform: scale(1.05); }
+      .buff-btn.green { background: #4caf50; border-color: #2e7d32; }
+      .buff-btn.blue { background: #2196f3; border-color: #1565c0; }
+      .buff-btn.purple { background: #9c27b0; border-color: #6a1b9a; }
+      .buff-btn.yellow { background: #ffc107; border-color: #ff8f00; color: #333; }
+      .buff-title { font-size: 24px; margin-bottom: 10px; }
+      .buff-desc { font-size: 14px; opacity: 0.9; }
+      #game-over-layer, #result-layer {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        display: none; flex-direction: column; justify-content: center;
+        align-items: center; z-index: 20; text-align: center;
+      }
+      #game-over-layer {
+        background-image: url('1.png'); background-size: cover; background-position: center;
+        color: white; text-shadow: 2px 2px 8px #000;
+      }
+      #result-layer {
+        background-color: black;
+        color: white;
+      }
+      .eaten-text {
+        color: #ff1111; font-weight: bold; font-size: 64px; text-transform: uppercase;
+      }
+      .go-sub { margin-top: 10px; font-size: 28px; }
+      #go-continue { margin-top: 30px; font-size: 18px; opacity: 0.8; }
+      .restart-btn {
+        padding: 12px 35px; font-size: 24px; cursor: pointer;
+        background-color: #d32f2f; color: white; border: none; border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(211, 47, 47, 0.4);
+        transition: transform 0.2s;
+      }
+      .restart-btn:hover { transform: scale(1.05); }
+      canvas { display: block; }
+    </style>
+  </head>
+  <body>
+    <div id="ui-layer">
+      <h1>殺死蟑螂</h1>
+      <h2>小心!</h2>
+      <h3>別讓蟑螂碰到你</h3>
+      <button id="start-btn">開始遊戲</button>
+    </div>
+
+    <div id="tutorial-layer">
+      <h1 style="color: #1976D2;">遊戲教學</h1>
+      <ul class="tut-list">
+        <li>1. 旋轉滑鼠調整子彈發射方向</li>
+        <li>2. 按空白鍵發射子彈</li>
+        <li>3. 每 20 秒可以選 buff 增益，buff 有不同稀有度和效果</li>
+        <li>4. 每 30 秒蟑螂會變強</li>
+        <li>5. 殺死蟑螂......</li>
+      </ul>
+      <button id="tutorial-start-btn">殺蟑螂!</button>
+    </div>
+
+    <div id="buff-layer">
+      <h1>支援!</h1>
+      <p>你媽看你太可憐<br>送了外援來給你</p>
+      <div class="buff-container" id="buff-options">
+        <!-- Buttons will be generated here -->
+      </div>
+    </div>
+
+    <div id="game-over-layer">
+      <h1 id="go-title"></h1>
+      <div id="go-subtitles"></div>
+      <p id="go-continue">點擊滑鼠繼續</p>
+    </div>
+
+    <div id="result-layer">
+      <h1 style="color: white; margin-bottom: 20px;">悲劇結果</h1>
+      <div id="final-stats" style="font-size: 32px; margin-bottom: 40px; line-height: 1.6;"></div>
+      <button id="restart-btn" class="restart-btn" style="display: none;">重新阻止</button>
+    </div>
+
+    <div id="info-bar">
+      <div>分數: <span id="score-val">0</span></div>
+      <div>時間: <span id="timer-val">0</span>s</div>
+    </div>
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+      const canvas = document.getElementById('gameCanvas');
+      const ctx = canvas.getContext('2d');
+      const ui = document.getElementById('ui-layer');
+      const startBtn = document.getElementById('start-btn');
+      const infoBar = document.getElementById('info-bar');
+      const scoreEl = document.getElementById('score-val');
+      const timerEl = document.getElementById('timer-val');
+
+      let score = 0;
+      let gameActive = false;
+      let mousePos = { x: 0, y: 0 };
+      let bullets = [];
+      let cockroaches = [];
+      let startTime = 0;
+      let pausedTime = 0;
+      let lastSupportTime = 0;
+      let difficultyLevel = 0;
+      let gameOverStep = 0;
+      let canClickContinue = false;
+      let gamePaused = false;
+
+      // Buff 狀態
+      let playerBuffs = {}; // 儲存目前各項 Buff 的等級 (1-4)
+      let roachHouses = [];
+      let newspapers = [];
+      let alcoholParticles = [];
+      let lastAlcoholTime = 0;
+      let lastNewspaperTime = 0;
+      let insecticideAngle = 0;
+      let lastFireTime = 0;
+
+      function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      class Cockroach {
+        constructor() {
+          this.init();
+        }
+        init() {
+          const shade = Math.floor(Math.random() * 100);
+          this.color = `rgb(${100 + shade}, ${50 + shade / 2}, 30)`;
+          this.size = Math.random() * 12 + 15;
+          this.isSlowed = false;
+          this.resetPosition();
+        }
+        resetPosition() {
+          let baseSpeed = 1.05 + (difficultyLevel * 0.4);
+          if (playerBuffs["蟑螂減速"]) {
+            const slowMap = {1: 0.9, 2: 0.8, 3: 0.7, 4: 0.55};
+            baseSpeed *= slowMap[playerBuffs["蟑螂減速"]];
+          }
+          const side = Math.floor(Math.random() * 4);
+          if (side === 0) { this.x = Math.random() * canvas.width; this.y = -this.size; }
+          else if (side === 1) { this.x = canvas.width + this.size; this.y = Math.random() * canvas.height; }
+          else if (side === 2) { this.x = Math.random() * canvas.width; this.y = canvas.height + this.size; }
+          else { this.x = -this.size; this.y = Math.random() * canvas.height; }
+
+          // 計算朝向中心的向量
+          const dx = (canvas.width / 2) - this.x;
+          const dy = (canvas.height / 2) - this.y;
+          const dist = Math.hypot(dx, dy);
+          this.vx = (dx / dist) * baseSpeed;
+          this.vy = (dy / dist) * baseSpeed;
+        }
+        update() {
+          if (gamePaused) return;
+          const currentSpeedMult = this.isSlowed ? 0.5 : 1.0;
+          this.x += this.vx * currentSpeedMult;
+          this.y += this.vy * currentSpeedMult;
+          if (this.x < -50 || this.x > canvas.width + 50 || this.y < -50 || this.y > canvas.height + 50) {
+            this.init();
+          }
+        }
+        draw() {
+          ctx.save();
+          ctx.translate(this.x, this.y);
+          ctx.rotate(Math.atan2(this.vy, this.vx));
+
+          // 繪製酒精減速特效
+          if (this.isSlowed) {
+            ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+            ctx.beginPath(); ctx.arc(0, 0, this.size + 2, 0, Math.PI*2); ctx.fill();
+          }
+
+          // 畫腳 (六隻)
+          ctx.strokeStyle = this.color;
+          ctx.lineWidth = 2;
+          for (let i = -1; i <= 1; i++) {
+            ctx.beginPath();
+            ctx.moveTo(i * 5, 0); ctx.lineTo(i * 10, -15); // 左側
+            ctx.moveTo(i * 5, 0); ctx.lineTo(i * 10, 15);  // 右側
+            ctx.stroke();
+          }
+
+          ctx.fillStyle = this.color;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, this.size, this.size / 2, 0, 0, Math.PI * 2);
+          ctx.fill();
+          // 觸角
+          ctx.strokeStyle = this.color;
+          ctx.beginPath();
+          ctx.moveTo(this.size, 0); ctx.lineTo(this.size + 10, -5);
+          ctx.moveTo(this.size, 0); ctx.lineTo(this.size + 10, 5);
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+
+      class Bullet {
+        constructor(x, y, angle) {
+          let speed = 10;
+          if (playerBuffs["子彈加速"]) {
+            const speedMap = {1: 1.2, 2: 1.35, 3: 1.5, 4: 1.6};
+            speed *= speedMap[playerBuffs["子彈加速"]];
+          }
+          this.x = x; this.y = y;
+          this.vx = Math.cos(angle) * speed;
+          this.vy = Math.sin(angle) * speed;
+        }
+        update() { if(!gamePaused){this.x += this.vx; this.y += this.vy;} }
+        draw() {
+          ctx.fillStyle = '#FF5722';
+          ctx.beginPath(); ctx.arc(this.x, this.y, 5.7, 0, Math.PI * 2); ctx.fill();
+        }
+      }
+
+      class Newspaper {
+        constructor(x, y, angle) {
+          this.x = x; this.y = y;
+          this.angle = angle;
+          this.speed = 7;
+          this.vx = Math.cos(angle) * this.speed;
+          this.vy = Math.sin(angle) * this.speed;
+          this.w = 210; this.h = 15;
+        }
+        update() { if(!gamePaused){this.x += this.vx; this.y += this.vy;} }
+        draw() {
+          ctx.save();
+          ctx.translate(this.x, this.y);
+          ctx.rotate(this.angle + Math.PI / 2);
+          ctx.fillStyle = "#fff";
+          ctx.strokeStyle = "#333";
+          ctx.lineWidth = 1;
+          ctx.fillRect(-this.w/2, -this.h/2, this.w, this.h);
+          ctx.strokeRect(-this.w/2, -this.h/2, this.w, this.h);
+          // 報紙線條
+          ctx.beginPath();
+          ctx.moveTo(-this.w/2 + 5, 0); ctx.lineTo(this.w/2 - 5, 0);
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+
+      class Alcohol {
+        constructor(x, y, angle) {
+          this.x = x; this.y = y;
+          this.vx = Math.cos(angle) * 4;
+          this.vy = Math.sin(angle) * 4;
+          this.life = 60;
+        }
+        update() { if(!gamePaused){this.x += this.vx; this.y += this.vy; this.life--;} }
+        draw() {
+          ctx.fillStyle = `rgba(200, 240, 255, ${this.life/60})`;
+          ctx.beginPath(); ctx.arc(this.x, this.y, 3, 0, Math.PI*2); ctx.fill();
+        }
+      }
+
+      function drawSlipper() {
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        const angle = Math.atan2(mousePos.y - cy, mousePos.x - cx);
+
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(angle + Math.PI / 2);
+        // 鞋底
+        ctx.fillStyle = "white";
+        ctx.beginPath();
+        ctx.roundRect(-20, -35, 40, 70, 15);
+        ctx.fill();
+        ctx.strokeStyle = "#bbb"; ctx.stroke();
+        // 藍色橫帶
+        ctx.fillStyle = "#2196F3";
+        ctx.fillRect(-20, -5, 40, 12);
+        ctx.restore();
+      }
+
+      function update() {
+        if (!gameActive || gamePaused) {
+          if (gamePaused) requestAnimationFrame(update);
+          return;
+        }
+
+        const now = Date.now();
+        const elapsed = Math.floor((now - startTime - pausedTime) / 1000);
+        timerEl.innerText = elapsed;
+
+        // 每30秒提升難度
+        difficultyLevel = Math.floor(elapsed / 30);
+        const maxRoaches = 10 + (difficultyLevel * 2);
+
+        // 每20秒觸發支援
+        if (elapsed > 0 && elapsed % 20 === 0 && elapsed !== lastSupportTime) {
+          lastSupportTime = elapsed;
+          triggerSupport();
+        }
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // 處理 Buff 效果
+        handleBuffEffects(now);
+
+        // 補充蟑螂
+        if (cockroaches.length < maxRoaches) cockroaches.push(new Cockroach());
+
+        // 蟑螂屋
+        roachHouses.forEach(h => {
+          ctx.fillStyle = "#8d6e63";
+          ctx.fillRect(h.x - 53, h.y - 53, 106, 106); // 蟑螂屋尺寸調整為約四個藍白拖面積
+          ctx.fillStyle = "#5d4037";
+          ctx.fillRect(h.x - 43, h.y - 43, 86, 86); // 內部尺寸調整
+        });
+
+        // 酒精粒子
+        alcoholParticles.forEach((p, pi) => {
+          p.update(); p.draw();
+          if (p.life <= 0) alcoholParticles.splice(pi, 1);
+        });
+
+        // 報紙
+        newspapers.forEach((n, ni) => {
+          n.update(); n.draw();
+          if (n.x < 0 || n.x > canvas.width || n.y < 0 || n.y > canvas.height) newspapers.splice(ni, 1);
+        });
+
+        // 子彈邏輯
+        bullets.forEach((b, bi) => {
+          b.update(); b.draw();
+          if (b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height) bullets.splice(bi, 1);
+        });
+
+        // 蟑螂邏輯
+        const slipperX = canvas.width / 2;
+        const slipperY = canvas.height / 2;
+        cockroaches.forEach((c, ci) => {
+          c.isSlowed = false;
+          
+          // 酒精碰撞 (不穿透)
+          alcoholParticles.forEach((p, pi) => {
+            if (Math.hypot(p.x - c.x, p.y - c.y) < c.size) {
+              c.isSlowed = true;
+              alcoholParticles.splice(pi, 1);
+            }
+          });
+
+          // 殺蟲劑碰撞
+          if (playerBuffs["殺蟲劑"]) {
+            const rangeMap = {1: 3, 2: 4, 3: 4, 4: 5};
+            const range = rangeMap[playerBuffs["殺蟲劑"]] * 70; // 3-5倍藍白拖長度
+            const dx = c.x - slipperX;
+            const dy = c.y - slipperY;
+            const dist = Math.hypot(dx, dy);
+            if (dist < range) {
+              const angle = Math.atan2(dy, dx);
+              if (Math.abs(angle - insecticideAngle) < 0.2) {
+                killRoach(ci); return;
+              }
+            }
+          }
+
+          // 報紙碰撞
+          newspapers.forEach((n, ni) => {
+            // 報紙變長了，稍微加大判定半徑
+            if (Math.hypot(n.x - c.x, n.y - c.y) < 60) {
+              newspapers.splice(ni, 1);
+              killRoach(ci); return;
+            }
+          });
+
+          // 蟑螂屋碰撞
+          roachHouses.forEach(h => {
+            if (Math.hypot(h.x - c.x, h.y - c.y) < 55) { // 碰撞偵測範圍調整
+              const chance = h.chance;
+              if (Math.random() < chance) {
+                killRoach(ci); return;
+              }
+            }
+          });
+
+          c.update(); c.draw();
+          
+          // 碰撞子彈
+          bullets.forEach((b, bi) => {
+            if (Math.hypot(b.x - c.x, b.y - c.y) < c.size + 5.7) {
+              killRoach(ci);
+              bullets.splice(bi, 1); return;
+            }
+          });
+
+          // 碰撞藍白拖 (中心失敗判定)
+          if (Math.hypot(c.x - slipperX, c.y - slipperY) < 30) { gameOver(); }
+        });
+
+        function killRoach(idx) {
+          score += 10;
+          scoreEl.innerText = score;
+          cockroaches.splice(idx, 1);
+        }
+
+        drawSlipper();
+        requestAnimationFrame(update);
+      }
+
+      function handleBuffEffects(now) {
+        // 酒精發動
+        if (playerBuffs["酒精"] && now - lastAlcoholTime > 1000) {
+          lastAlcoholTime = now;
+          for(let i=0; i<36; i++) alcoholParticles.push(new Alcohol(canvas.width/2, canvas.height/2, (i*10)*Math.PI/180));
+        }
+        // 報紙發動
+        if (playerBuffs["報紙捲"]) {
+          const intervalMap = {1: 3000, 2: 2000, 3: 1500, 4: 1000};
+          if (now - lastNewspaperTime > intervalMap[playerBuffs["報紙捲"]]) {
+            lastNewspaperTime = now;
+            const angle = Math.atan2(mousePos.y - canvas.height/2, mousePos.x - canvas.width/2);
+            newspapers.push(new Newspaper(canvas.width/2, canvas.height/2, angle));
+          }
+        }
+        // 殺蟲劑旋轉
+        if (playerBuffs["殺蟲劑"]) {
+          let rotSpeed = 0.05;
+          if (playerBuffs["殺蟲劑"] === 3) rotSpeed *= 1.5;
+          if (playerBuffs["殺蟲劑"] === 4) rotSpeed *= 2.0;
+          insecticideAngle += rotSpeed;
+          // 繪製殺蟲劑射束
+          const rangeMap = {1: 3, 2: 4, 3: 4, 4: 5};
+          const range = rangeMap[playerBuffs["殺蟲劑"]] * 70;
+          ctx.save();
+          ctx.translate(canvas.width/2, canvas.height/2);
+          ctx.rotate(insecticideAngle);
+          const grad = ctx.createLinearGradient(0,0,range,0);
+          grad.addColorStop(0, "rgba(0, 255, 0, 0.6)");
+          grad.addColorStop(1, "rgba(0, 255, 0, 0)");
+          ctx.fillStyle = grad;
+          ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(range, -15); ctx.lineTo(range, 15); ctx.fill();
+          ctx.restore();
+        }
+      }
+
+      const buffPool = [
+        { name: "酒精", desc: "噴灑酒精降低蟑螂速度", colors: ["green", "blue", "purple", "yellow"] },
+        { name: "蟑螂屋", desc: "放置陷阱黏住蟑螂", colors: ["green", "blue", "purple", "yellow"] },
+        { name: "殺蟲劑", desc: "旋轉噴灑毒氣殺死蟑螂", colors: ["green", "blue", "purple", "yellow"] },
+        { name: "報紙捲", desc: "定期射出強力報紙捲", colors: ["green", "blue", "purple", "yellow"] },
+        { name: "蟑螂減速", desc: "永久降低所有蟑螂速度", colors: ["green", "blue", "purple", "yellow"] },
+        { name: "增加子彈", desc: "發射平行的額外子彈", colors: ["green", "blue", "purple", "yellow"] },
+        { name: "連發子彈", desc: "一次發射多枚後續子彈", colors: ["green", "blue", "purple", "yellow"] },
+        { name: "加快發射", desc: "縮短子彈發射間隔", colors: ["green", "blue", "purple", "yellow"] },
+        { name: "子彈加速", desc: "子彈移動速度變快", colors: ["green", "blue", "purple", "yellow"] }
+      ];
+
+      function triggerSupport() {
+        gamePaused = true;
+        const pauseStart = Date.now();
+        const buffLayer = document.getElementById('buff-layer');
+        const optionsCont = document.getElementById('buff-options');
+        optionsCont.innerHTML = "";
+        buffLayer.style.display = 'flex';
+
+        let selected = [];
+        while(selected.length < 3) {
+          const r = Math.random();
+          let level = 1; // green
+          if (r < 0.05) level = 4; // yellow
+          else if (r < 0.20) level = 3; // purple
+          else if (r < 0.55) level = 2; // blue
+          
+          const typeIdx = Math.floor(Math.random() * buffPool.length);
+          const buff = buffPool[typeIdx];
+          const buffId = `${buff.name}_${level}`;
+          
+          // 檢查是否重複或玩家已擁有同級/更高級
+          if (!selected.find(s => s.name === buff.name) && (!playerBuffs[buff.name] || playerBuffs[buff.name] < level)) {
+            selected.push({ ...buff, level: level });
+          }
+        }
+
+        selected.forEach(b => {
+          const btn = document.createElement('div');
+          const colorClass = ["", "green", "blue", "purple", "yellow"][b.level];
+          btn.className = `buff-btn ${colorClass}`;
+          btn.innerHTML = `<div class="buff-title">${b.name} Lv.${b.level}</div><div class="buff-desc">${b.desc}</div>`;
+          btn.onclick = () => {
+            applyBuff(b.name, b.level);
+            buffLayer.style.display = 'none';
+            gamePaused = false;
+            pausedTime += (Date.now() - pauseStart);
+          };
+          optionsCont.appendChild(btn);
+        });
+      }
+
+      function applyBuff(name, level) {
+        playerBuffs[name] = level;
+        if (name === "蟑螂屋") {
+          roachHouses = [];
+          const count = level >= 3 ? 2 : 1;
+          const chance = (level === 2 || level === 4) ? 1.0 : 0.8;
+          for(let i=0; i<count; i++) roachHouses.push({x: Math.random()*canvas.width, y: Math.random()*canvas.height, chance: chance});
+        }
+      }
+
+      function fire() {
+        if (!gameActive || gamePaused) return;
+        
+        const now = Date.now();
+        let fireInterval = 300;
+        if (playerBuffs["加快發射"]) {
+          const rateMap = {1: 0.8, 2: 0.65, 3: 0.5, 4: 0.4};
+          fireInterval *= rateMap[playerBuffs["加快發射"]];
+        }
+        if (now - lastFireTime < fireInterval) return;
+        lastFireTime = now;
+
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        const angle = Math.atan2(mousePos.y - cy, mousePos.x - cx);
+        
+        // 基本發射 (包含 Parallel 增加子彈)
+        const pCount = playerBuffs["增加子彈"] || 0;
+        const bCount = playerBuffs["連發子彈"] || 0;
+        
+        const doFire = (ang) => {
+          bullets.push(new Bullet(cx, cy, ang));
+          if (pCount > 0) {
+            const offsets = {1: [0.2], 2: [0.2], 3: [-0.2, 0, 0.2], 4: [-0.3, -0.1, 0.1, 0.3], 5: [-0.4, -0.2, 0, 0.2, 0.4]};
+            (offsets[pCount] || []).forEach(off => bullets.push(new Bullet(cx, cy, ang + off)));
+          }
+        };
+
+        doFire(angle);
+
+        // 連發
+        if (bCount > 0) {
+          const burstList = {1: 2, 2: 4, 3: 5, 4: 6}; // 根據等級對應的連發數
+          // 這裡簡化邏輯：藍色對應4發，紫色5發，黃色6發
+          let actualBurst = 0;
+          if (bCount === 1) actualBurst = 2;
+          else if (bCount === 2) actualBurst = 4;
+          else if (bCount === 3) actualBurst = 5;
+          else if (bCount === 4) actualBurst = 6;
+
+          for (let i = 1; i <= actualBurst; i++) {
+            setTimeout(() => { if(gameActive && !gamePaused) doFire(angle); }, i * 100);
+          }
+        }
+      }
+
+      function gameOver() {
+        gameActive = false;
+        infoBar.style.display = 'none';
+        gameOverStep = 1;
+        canClickContinue = true;
+        
+        const goLayer = document.getElementById('game-over-layer');
+        goLayer.style.display = 'flex';
+        document.getElementById('go-title').innerText = "你無法阻止蟑螂";
+        document.getElementById('go-subtitles').innerHTML = "";
+      }
+
+      function handleGameOverSequence() {
+        if (!canClickContinue) return;
+
+        const subs = document.getElementById('go-subtitles');
+        if (gameOverStep === 1) {
+          subs.innerHTML += '<div class="go-sub">蟑螂佔領了你家</div>';
+          gameOverStep = 2;
+        } else if (gameOverStep === 2) {
+          subs.innerHTML += '<div class="go-sub">並在你家生了一堆娃娃</div>';
+          gameOverStep = 3;
+        } else if (gameOverStep === 3) {
+          subs.innerHTML += '<div class="go-sub">娃娃食物不夠吃......</div>';
+          gameOverStep = 4;
+        } else if (gameOverStep === 4) {
+          // 清除前面所有文字
+          document.getElementById('go-title').innerText = "";
+          subs.innerHTML = "";
+          document.getElementById('go-continue').style.display = 'none';
+          
+          const eaten = document.createElement('div');
+          eaten.innerText = "你被蟑螂吃掉了";
+          eaten.className = "eaten-text";
+          subs.appendChild(eaten);
+          
+          gameOverStep = 5;
+          canClickContinue = false;
+          // 一秒後顯示繼續提示
+          setTimeout(() => {
+            document.getElementById('go-continue').style.display = 'block';
+            canClickContinue = true;
+          }, 1000);
+        } else if (gameOverStep === 5) {
+          document.getElementById('game-over-layer').style.display = 'none';
+          document.getElementById('result-layer').style.display = 'flex';
+          document.getElementById('final-stats').innerHTML = `
+            <div>存活時間: <span style="color:#ffeb3b">${timerEl.innerText}</span> 秒</div>
+            <div>擊殺分數: <span style="color:#ffeb3b">${score}</span> 分</div>
+          `;
+          
+          gameOverStep = 6;
+          // 三秒後顯示按鈕
+          setTimeout(() => {
+            document.getElementById('restart-btn').style.display = 'inline-block';
+          }, 3000);
+        }
+      }
+
+      startBtn.addEventListener('click', () => {
+        ui.style.display = 'none';
+        const tutLayer = document.getElementById('tutorial-layer');
+        const tutBtn = document.getElementById('tutorial-start-btn');
+        tutLayer.style.display = 'flex';
+        
+        // 3秒後顯示開始按鈕
+        setTimeout(() => {
+          tutBtn.style.display = 'block';
+        }, 3000);
+      });
+
+      document.getElementById('tutorial-start-btn').addEventListener('click', () => {
+        document.getElementById('tutorial-layer').style.display = 'none';
+        infoBar.style.display = 'block';
+        gameActive = true;
+        gameOverStep = 0;
+        score = 0;
+        scoreEl.innerText = "0";
+        playerBuffs = {};
+        roachHouses = [];
+        newspapers = [];
+        alcoholParticles = [];
+        pausedTime = 0;
+        lastSupportTime = 0;
+        startTime = Date.now();
+        cockroaches = [];
+        update();
+      });
+
+      document.getElementById('restart-btn').addEventListener('click', () => {
+        location.reload();
+      });
+
+      window.addEventListener('mousemove', e => { mousePos.x = e.clientX; mousePos.y = e.clientY; });
+      window.addEventListener('mousedown', (e) => {
+        if (gameActive && !gamePaused) {
+          fire();
+        } else if (!gameActive && gameOverStep > 0 && gameOverStep < 6) {
+          handleGameOverSequence();
+        }
+      });
+
+      window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' || e.keyCode === 32) {
+          if (gameActive && !gamePaused) {
+            fire();
+            e.preventDefault(); // 防止空白鍵捲動頁面
+          }
+        }
+      });
+    </script>
+  </body>
+</html>
